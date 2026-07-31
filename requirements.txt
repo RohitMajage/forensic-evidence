@@ -5,11 +5,10 @@ numpy
 scipy
 Pillow
 pydub
-dlib
 face-recognition-models
 webrtcvad
-torch --extra-index-url https://download.pytorch.org/whl/cpu
 librosa
+dlib
 face-recognition
 resemblyzer
 gunicorn
