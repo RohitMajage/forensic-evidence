@@ -22,6 +22,7 @@ urlpatterns = [
     # about
     path('about/', about, name='about'),
     
+    path('case_create/', case_create, name='case_create'),
     path('evidence_create/', evidence_create, name='evidence_create'),
     path('evidence_list/', evidence_list, name='evidence_list'),
     path('verify/', match_input, name='verify_input'),

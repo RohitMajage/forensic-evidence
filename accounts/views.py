@@ -220,6 +220,24 @@ def about(request):
 
 
 @login_required
+def case_create(request):
+    if request.method == 'POST':
+        form = CaseForm(request.POST)
+        if form.is_valid():
+            case = form.save(commit=False)
+            case.created_by = request.user
+            team, _ = Team.objects.get_or_create(name="Default Forensic Team")
+            team.members.add(request.user)
+            case.team = team
+            case.save()
+            messages.success(request, f"Case '{case.case_name}' created successfully!")
+            return redirect('evidence_create')
+    else:
+        form = CaseForm()
+    return render(request, 'evidence/case_form.html', {'form': form})
+
+
+@login_required
 def evidence_list(request):
     if request.user.is_superuser:
         evidences = Evidence.objects.all()
@@ -230,6 +248,17 @@ def evidence_list(request):
 
 @login_required
 def evidence_create(request):
+    # Ensure at least one default case exists so the dropdown is never empty
+    if not Case.objects.exists():
+        team, _ = Team.objects.get_or_create(name="Default Forensic Team")
+        team.members.add(request.user)
+        Case.objects.create(
+            case_name="General Forensic Case",
+            case_number="CASE-001",
+            team=team,
+            created_by=request.user
+        )
+
     if request.method == 'POST':
         form = EvidenceForm(request.POST, request.FILES, request=request)
         if form.is_valid():
@@ -238,15 +267,17 @@ def evidence_create(request):
             evidence.save()
             form.save_m2m()
 
-            for viewer in form.cleaned_data['viewers']:
-                send_mail(
-                    subject='New Evidence Uploaded',
-                    message=f"New evidence has been uploaded to case {evidence.case.case_number}.",
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[viewer.email],
-                    fail_silently=True,
-                )
-            messages.success(request, "Evidence uploaded and viewers notified.")
+            viewers = form.cleaned_data.get('viewers')
+            if viewers:
+                for viewer in viewers:
+                    send_mail(
+                        subject='New Evidence Uploaded',
+                        message=f"New evidence has been uploaded to case {evidence.case.case_number}.",
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[viewer.email],
+                        fail_silently=True,
+                    )
+            messages.success(request, "Evidence uploaded successfully!")
             return redirect('evidence_list')
     else:
         form = EvidenceForm(request=request)

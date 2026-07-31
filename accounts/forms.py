@@ -123,3 +123,14 @@ class EvidenceForm(forms.ModelForm):
 class MatchInputForm(forms.Form):
     uploaded_face = forms.ImageField(required=False, label="Upload Face Image")
     uploaded_voice = forms.FileField(required=False, label="Upload Voice File")
+
+
+class CaseForm(forms.ModelForm):
+    class Meta:
+        model = Case
+        fields = ['case_name', 'case_number']
+        widgets = {
+            'case_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Cyber Crime Investigation'}),
+            'case_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. CASE-2026-01'}),
+        }
+
