@@ -6,7 +6,7 @@ ENV PORT=8080
 
 WORKDIR /app
 
-# Install build-essential for small C extensions (webrtcvad) + multimedia libraries
+# Install system libraries
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     ffmpeg \
@@ -28,9 +28,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . /app/
 
-RUN python manage.py collectstatic --noinput
-RUN python manage.py migrate --noinput
+# Make startup script executable
+RUN chmod +x /app/start.sh
 
 EXPOSE 8080
 
-CMD exec gunicorn --bind 0.0.0.0:${PORT} --workers 1 --threads 4 --timeout 0 myproject.wsgi:application
+# Run migrations + collectstatic + gunicorn at container startup
+CMD ["/app/start.sh"]
