@@ -6,7 +6,9 @@ ENV PORT=8080
 
 WORKDIR /app
 
+# Install build-essential for small C extensions (webrtcvad) + multimedia libraries
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
     ffmpeg \
     libsndfile1 \
     git \
@@ -15,7 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install CPU-only PyTorch
 RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
 
-# Install dlib-bin prebuilt binary wheel
+# Install dlib prebuilt binary wheel (no dlib compilation!)
 RUN pip install --no-cache-dir dlib-bin
 
 # Install face-recognition without pulling raw dlib source
