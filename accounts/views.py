@@ -38,18 +38,40 @@ def base(request):
 
 def register_view(request):
     if request.method == 'POST':
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        if username:
+            CustomUser.objects.filter(username=username, is_active=False).delete()
+        if email:
+            CustomUser.objects.filter(email=email, is_active=False).delete()
+
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save(commit=False)
-            user.is_active = True
-            user.is_verified = True
+            otp = generate_otp()
+            user.otp_code = otp
+            user.is_active = False  # Deactivate until verified
             user.save()
-            login(request, user)
-            messages.success(request, "Registration successful!")
-            return redirect('base')
+
+            # Send OTP via email safely
+            try:
+                send_mail(
+                    'Verify your email with OTP',
+                    f'Your OTP code is: {otp}',
+                    settings.DEFAULT_FROM_EMAIL,
+                    [user.email],
+                    fail_silently=True,
+                )
+            except Exception as e:
+                print(f"[Email Error] {e}")
+
+            request.session['user_id'] = user.id
+            messages.info(request, f"An OTP code has been sent to {user.email}. Please enter it to verify.")
+            return redirect('verify_otp')
     else:
         form = CustomUserCreationForm()
     return render(request, 'accounts/register.html', {'form': form})
+
 
 
 from django.shortcuts import render, redirect
