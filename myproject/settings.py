@@ -28,6 +28,15 @@ DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 ALLOWED_HOSTS = ['*']
 AUTH_USER_MODEL = 'accounts.CustomUser'
 
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.onrender.com',
+    'https://*.run.app',
+    'http://localhost',
+    'http://127.0.0.1',
+]
+
+
 
 # Application definition
 
