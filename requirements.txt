@@ -7,9 +7,8 @@ Pillow
 pydub
 dlib-bin
 face-recognition-models
-webrtcvad
+webrtcvad-wheels
 librosa
-face-recognition
 resemblyzer
 gunicorn
 whitenoise

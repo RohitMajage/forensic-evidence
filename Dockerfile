@@ -12,11 +12,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# Install CPU-only PyTorch (lightweight)
+# Install CPU-only PyTorch
 RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
 
-# Install dlib prebuilt binary wheel (0 MB compilation RAM)
+# Install dlib-bin prebuilt binary wheel
 RUN pip install --no-cache-dir dlib-bin
+
+# Install face-recognition without pulling raw dlib source
+RUN pip install --no-cache-dir --no-deps face-recognition
 
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
