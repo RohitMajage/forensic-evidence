@@ -11,16 +11,22 @@ from .models import *
 from .utils import *
 
 import os
-import cv2
 import numpy as np
 import tempfile
-import face_recognition
-from pydub import AudioSegment
-from scipy.io import wavfile
-from resemblyzer import VoiceEncoder, preprocess_wav
 
+# Lazy-loaded globals (only initialized when first used, not at import time)
+_voice_encoder = None
 
-encoder = VoiceEncoder()
+def get_voice_encoder():
+    global _voice_encoder
+    if _voice_encoder is None:
+        try:
+            from resemblyzer import VoiceEncoder
+            _voice_encoder = VoiceEncoder()
+        except Exception as e:
+            print(f"[VoiceEncoder load error] {e}")
+    return _voice_encoder
+
 
 
 def base(request):
@@ -189,6 +195,7 @@ def evidence_create(request):
 
 def convert_to_wav(source_path, target_path):
     try:
+        from pydub import AudioSegment
         audio = AudioSegment.from_file(source_path)
         audio.export(target_path, format="wav")
         return True
@@ -199,10 +206,14 @@ def convert_to_wav(source_path, target_path):
 
 def compare_audio(file1, file2):
     try:
+        from resemblyzer import preprocess_wav
+        enc = get_voice_encoder()
+        if enc is None:
+            return False
         wav1 = preprocess_wav(file1)
         wav2 = preprocess_wav(file2)
-        embed1 = encoder.embed_utterance(wav1)
-        embed2 = encoder.embed_utterance(wav2)
+        embed1 = enc.embed_utterance(wav1)
+        embed2 = enc.embed_utterance(wav2)
         similarity = np.dot(embed1, embed2) / (np.linalg.norm(embed1) * np.linalg.norm(embed2))
         return similarity > 0.75
     except Exception as e:
@@ -223,22 +234,27 @@ def match_input(request):
             uploaded_voice = request.FILES.get('uploaded_voice')
 
             if uploaded_image:
-                uploaded_image_data = face_recognition.load_image_file(uploaded_image)
-                uploaded_encoding = face_recognition.face_encodings(uploaded_image_data)
-                if uploaded_encoding:
-                    uploaded_encoding = uploaded_encoding[0]
-                    for evidence in Evidence.objects.filter(type='image'):
-                        try:
-                            known_img = face_recognition.load_image_file(evidence.file.path)
-                            known_encoding = face_recognition.face_encodings(known_img)
-                            if known_encoding and face_recognition.compare_faces([known_encoding[0]], uploaded_encoding)[0]:
-                                matched_evidence = evidence
-                                match_message = f"Image matched with evidence ID {evidence.id}."
-                                break
-                        except Exception as e:
-                            print(f"[Image Match Error] {e}")
-                if not matched_evidence:
-                    match_message = "Image did not match any stored evidence."
+                try:
+                    import face_recognition
+                    uploaded_image_data = face_recognition.load_image_file(uploaded_image)
+                    uploaded_encoding = face_recognition.face_encodings(uploaded_image_data)
+                    if uploaded_encoding:
+                        uploaded_encoding = uploaded_encoding[0]
+                        for evidence in Evidence.objects.filter(type='image'):
+                            try:
+                                known_img = face_recognition.load_image_file(evidence.file.path)
+                                known_encoding = face_recognition.face_encodings(known_img)
+                                if known_encoding and face_recognition.compare_faces([known_encoding[0]], uploaded_encoding)[0]:
+                                    matched_evidence = evidence
+                                    match_message = f"Image matched with evidence ID {evidence.id}."
+                                    break
+                            except Exception as e:
+                                print(f"[Image Match Error] {e}")
+                    if not matched_evidence:
+                        match_message = "Image did not match any stored evidence."
+                except Exception as e:
+                    print(f"[face_recognition import error] {e}")
+                    match_message = "Face recognition is not available."
 
             if not matched_evidence and uploaded_voice:
                 temp_input_path = os.path.join(tempfile.gettempdir(), uploaded_voice.name)
