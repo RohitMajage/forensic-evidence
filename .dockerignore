@@ -1,0 +1,11 @@
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.git
+.gitignore
+db.sqlite3
+media/*
+face_recog_dlib_file-master.zip
+face_recog_dlib_file-master/
+staticfiles/

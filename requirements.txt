@@ -1,0 +1,16 @@
+django
+django-select2
+opencv-python-headless
+numpy
+scipy
+Pillow
+pydub
+dlib
+face-recognition-models
+webrtcvad
+torch --extra-index-url https://download.pytorch.org/whl/cpu
+librosa
+face-recognition
+resemblyzer
+gunicorn
+whitenoise

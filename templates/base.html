@@ -1,0 +1,244 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Modern Website{% endblock %}</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+
+    <style>
+        /* Global Styles */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: white;
+            color: #333;
+        }
+
+        /* Curved Section */
+        .curved-section {
+            background-color: #007bff;
+            color: white;
+            clip-path: ellipse(120% 100% at 50% 0%);
+            padding: 5rem 0;
+        }
+
+        .curved-section h1 {
+            font-size: 3rem;
+        }
+
+        .curved-section p {
+            font-size: 1.2rem;
+        }
+
+        /* Card Hover Effect */
+        .card-3d {
+            perspective: 1000px;
+            transform-style: preserve-3d;
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+            background-color: #fff;
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-3d:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Section Animation */
+        [data-aos] {
+            opacity: 0;
+            transform: translateY(50px);
+            transition: all 0.6s ease-out;
+        }
+
+        [data-aos].aos-animate {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Buttons */
+        .btn-rounded {
+            border-radius: 50px;
+            padding: 10px 20px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .btn-rounded:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 15px rgba(0, 123, 255, 0.4);
+        }
+
+        /* Icons Styling */
+        .icon-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .icon-box i {
+            font-size: 1.5rem;
+            color: #007bff;
+        }
+
+        /* Footer Styling */
+        footer {
+            background-color: #333;
+            color: #f8f9fa;
+            padding: 20px 0;
+            text-align: center;
+        }
+
+        footer a {
+            color: #1cc88a;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+    {% block style %}
+    {% endblock %}
+</head>
+
+<body>
+    <!-- Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand" href="/">Forensic Evidence</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+
+                {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'about' %}">About</a>
+                    </li>
+
+                    <!-- Evidence Dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="evidenceDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-folder2-open"></i> Evidence
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="evidenceDropdown">
+                            <li><a class="dropdown-item" href="{% url 'evidence_list' %}">View Evidence</a></li>
+                            <li><a class="dropdown-item" href="{% url 'evidence_create' %}">Upload Evidence</a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Face/Voice Verification -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'verify_input' %}">
+                            <i class="bi bi-person-check"></i> Verify Identity
+                        </a>
+                    </li>
+
+                    <!-- Contact Dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="contactDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-envelope-fill"></i> Contact
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="contactDropdown">
+                            <li><a class="dropdown-item" href="{% url 'contact' %}">Contact Form</a></li>
+                            <li><a class="dropdown-item" href="{% url 'contactView' %}">Contact View</a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Profile & Logout -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'view_profile' %}"><i class="bi bi-person-circle"></i> Profile</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right"></i> Logout</a>
+                    </li>
+
+                {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'login' %}"><i class="bi bi-box-arrow-in-right"></i> Login</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
+
+
+    {% block content %}
+    <!-- Curved Section -->
+    <section class="curved-section text-center">
+        <div class="container">
+            <h1>Welcome to Forensic Evidence</h1>
+            <p>We create cutting-edge solutions.</p>
+            <a href="#" class="btn btn-light btn-rounded"><i class="bi bi-chat-dots"></i> Get Started</a>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="container py-5">
+        <div class="row text-center">
+            <div class="col-md-4" data-aos="fade-up">
+                <div class="card-3d p-4">
+                    <div class="icon-box mb-3 mx-auto">
+                        <i class="bi bi-speedometer2"></i>
+                    </div>
+                    <h5>Fast Performance</h5>
+                    <p>Our solutions are designed to deliver high performance and speed.</p>
+                </div>
+            </div>
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
+                <div class="card-3d p-4">
+                    <div class="icon-box mb-3 mx-auto">
+                        <i class="bi bi-shield-check"></i>
+                    </div>
+                    <h5>Secure Systems</h5>
+                    <p>We prioritize the security of your data and systems.</p>
+                </div>
+            </div>
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="400">
+                <div class="card-3d p-4">
+                    <div class="icon-box mb-3 mx-auto">
+                        <i class="bi bi-graph-up-arrow"></i>
+                    </div>
+                    <h5>Scalable Growth</h5>
+                    <p>Our solutions grow with your business needs.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 Modern Website. Built with ❤  <a href="#"></a>.</p>
+        </div>
+    </footer>
+    {% endblock %}
+
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- AOS Animation Library -->
+    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        AOS.init();
+    </script>
+</body>
+
+</html>

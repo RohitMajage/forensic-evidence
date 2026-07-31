@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block title %}Profile{% endblock %}
+
+{% block content %}
+<style>
+    .profile-card {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #f8f9fa;
+        border-radius: 15px;
+        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+        padding: 30px;
+    }
+
+    h1 {
+        color: #007bff;
+        text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        padding: 10px 20px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+    }
+
+    .profile-info {
+        font-size: 18px;
+        margin: 15px 0;
+        color: #333;
+    }
+
+    .profile-info i {
+        color: #6c757d;
+        margin-right: 10px;
+    }
+</style>
+
+<div class="container mt-5">
+        <!-- Breadcrumb Navigation -->
+        <nav>
+            <ol class="breadcrumb p-3 shadow-sm">
+                <li class="breadcrumb-item">
+                    <a href="{% url 'base' %}">
+                        <i class="bi bi-house-door"></i> Home
+                    </a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">
+                    <i class="bi bi-person-circle"></i> Profile
+                </li>
+            </ol>
+        </nav>
+    <div class="profile-card">
+        <div class="text-center">
+            <h1>
+                <i class="bi bi-person-circle"></i> Your Profile
+            </h1>
+            <hr>
+            <p class="profile-info">
+                <i class="bi bi-person"></i> <strong>Username:</strong> {{ user.username }}
+            </p>
+            <p class="profile-info">
+                <i class="bi bi-envelope"></i> <strong>Email:</strong> {{ user.email }}
+            </p>
+            {% if user.phone_number %}
+            <p class="profile-info">
+                <i class="bi bi-telephone"></i> <strong>Phone Number:</strong> {{ user.phone_number }}
+            </p>
+            {% else %}
+            <p class="profile-info text-muted">
+                <i class="bi bi-telephone"></i> Phone number not provided
+            </p>
+            {% endif %}
+            <a href="{% url 'edit_profile' %}" class="btn btn-primary mt-3">
+                <i class="bi bi-pencil-square"></i> Edit Profile
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

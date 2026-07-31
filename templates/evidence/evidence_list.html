@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Evidence List</h2>
+    <table class="table table-bordered table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>Case</th>
+                <th>Type</th>
+                <th>Uploaded At</th>
+                <th>Uploaded By</th>
+                <th>File</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for evidence in evidences %}
+            <tr>
+                <td>{{ evidence.case.case_number }}</td>
+                <td>{{ evidence.get_type_display }}</td>
+                <td>{{ evidence.uploaded_at }}</td>
+                <td>{{ evidence.uploaded_by }}</td>
+                <td><a href="{{ evidence.file.url }}" class="btn btn-sm btn-primary" target="_blank">View</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
