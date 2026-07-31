@@ -33,10 +33,47 @@ def base(request):
     return render(request, 'base.html')
 
 
+def debug_view(request):
+    """Temporary debug endpoint to check server health on Render."""
+    import sys, django
+    from django.conf import settings as s
+    info = {
+        'python': sys.version,
+        'django': django.__version__,
+        'debug': s.DEBUG,
+        'db_engine': s.DATABASES['default'].get('ENGINE', '?'),
+        'email_backend': s.EMAIL_BACKEND,
+        'allowed_hosts': s.ALLOWED_HOSTS,
+    }
+    # Test DB connection
+    try:
+        from accounts.models import CustomUser
+        count = CustomUser.objects.count()
+        info['db_users'] = count
+        info['db_ok'] = True
+    except Exception as e:
+        info['db_error'] = str(e)
+        info['db_ok'] = False
+
+    # Test imports
+    for mod in ['whitenoise', 'gunicorn', 'dj_database_url', 'resemblyzer', 'face_recognition']:
+        try:
+            __import__(mod)
+            info[f'import_{mod}'] = 'OK'
+        except Exception as e:
+            info[f'import_{mod}'] = f'FAIL: {e}'
+
+    import json
+    from django.http import JsonResponse
+    return JsonResponse(info)
+
+
 def register_view(request):
     if request.method == 'POST':
         username = request.POST.get('username')
         email = request.POST.get('email')
+
+        # Remove any leftover unverified accounts with same username/email
         if username:
             CustomUser.objects.filter(username=username, is_active=False).delete()
         if email:
@@ -44,26 +81,38 @@ def register_view(request):
 
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
-            user = form.save(commit=False)
-            otp = generate_otp()
-            user.otp_code = otp
-            user.is_active = False
-            user.save()
-
             try:
-                send_mail(
-                    'Verify your email with OTP',
-                    f'Your OTP code is: {otp}',
-                    settings.DEFAULT_FROM_EMAIL,
-                    [user.email],
-                    fail_silently=True,
-                )
-            except Exception as e:
-                print(f"[Email Error] {e}")
+                user = form.save(commit=False)
+                otp = generate_otp()
+                user.otp_code = otp
+                user.is_active = True   # Active immediately so login always works
+                user.is_verified = False
+                user.save()
 
-            request.session['user_id'] = user.id
-            messages.info(request, f"An OTP code has been sent to {user.email}. Please enter it to verify.")
-            return redirect('verify_otp')
+                # Log the user in right away — registration is complete
+                login(request, user)
+
+                # Send OTP email in a background thread so slow SMTP never blocks
+                import threading
+                def send_otp_email():
+                    try:
+                        send_mail(
+                            'Your ForensicEvidence Email OTP',
+                            f'Hello {user.username},\n\nYour OTP code is: {otp}\n\nPlease verify your email.',
+                            settings.DEFAULT_FROM_EMAIL,
+                            [user.email],
+                            fail_silently=True,
+                        )
+                    except Exception as e:
+                        print(f"[Email Error] {e}")
+                threading.Thread(target=send_otp_email, daemon=True).start()
+
+                messages.success(request, f"Welcome {user.username}! An OTP has been sent to {user.email} to verify your email.")
+                return redirect('verify_otp')
+
+            except Exception as e:
+                print(f"[Register Error] {e}")
+                messages.error(request, f"Registration failed: {e}")
         else:
             for field, errors in form.errors.items():
                 for error in errors:
@@ -74,23 +123,34 @@ def register_view(request):
 
 
 def verify_otp_view(request):
-    user_id = request.session.get('user_id')
-    if not user_id:
-        return redirect('register')
+    # User is already logged in after registration; get from request.user or session
+    if request.user.is_authenticated:
+        user = request.user
+    else:
+        user_id = request.session.get('user_id')
+        if not user_id:
+            return redirect('register')
+        try:
+            user = CustomUser.objects.get(id=user_id)
+        except CustomUser.DoesNotExist:
+            return redirect('register')
 
-    user = CustomUser.objects.get(id=user_id)
+    # Already verified — skip OTP page
+    if user.is_verified:
+        return redirect('base')
 
     if request.method == 'POST':
         entered_otp = request.POST.get('otp')
-        if user.otp_code == entered_otp:
-            user.is_active = True
+        if user.otp_code and user.otp_code == entered_otp:
             user.is_verified = True
             user.otp_code = None
             user.save()
-            login(request, user)
+            messages.success(request, "Email verified successfully!")
             return redirect('base')
         else:
-            return render(request, 'accounts/verify_otp.html', {'error': 'Invalid OTP'})
+            return render(request, 'accounts/verify_otp.html', {'error': 'Invalid OTP. Please try again.'})
+
+    return render(request, 'accounts/verify_otp.html')
 
     return render(request, 'accounts/verify_otp.html')
 
