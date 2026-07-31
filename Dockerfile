@@ -6,19 +6,19 @@ ENV PORT=8080
 
 WORKDIR /app
 
-# Install pre-compiled binary dlib from Debian apt (0 MB compilation memory!)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3-dlib \
     ffmpeg \
     libsndfile1 \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# Install CPU-only PyTorch
+# Install CPU-only PyTorch (lightweight)
 RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
 
+# Install dlib prebuilt binary wheel (0 MB compilation RAM)
+RUN pip install --no-cache-dir dlib-bin
+
 COPY requirements.txt /app/
-RUN pip install --no-cache-dir --no-deps face-recognition
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . /app/

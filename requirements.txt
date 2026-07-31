@@ -5,6 +5,7 @@ numpy
 scipy
 Pillow
 pydub
+dlib-bin
 face-recognition-models
 webrtcvad
 librosa
