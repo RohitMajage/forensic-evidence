@@ -85,29 +85,32 @@ def register_view(request):
                 user = form.save(commit=False)
                 otp = generate_otp()
                 user.otp_code = otp
-                user.is_active = True   # Active immediately so login always works
+                user.is_active = True   # Active immediately so user is never locked out
                 user.is_verified = False
                 user.save()
 
-                # Log the user in right away — registration is complete
+                # Log the user in right away
                 login(request, user)
 
-                # Send OTP email in a background thread so slow SMTP never blocks
-                import threading
-                def send_otp_email():
-                    try:
-                        send_mail(
-                            'Your ForensicEvidence Email OTP',
-                            f'Hello {user.username},\n\nYour OTP code is: {otp}\n\nPlease verify your email.',
-                            settings.DEFAULT_FROM_EMAIL,
-                            [user.email],
-                            fail_silently=True,
-                        )
-                    except Exception as e:
-                        print(f"[Email Error] {e}")
-                threading.Thread(target=send_otp_email, daemon=True).start()
+                # Send OTP email synchronously (not in daemon thread) so Gunicorn doesn't kill it
+                email_sent = False
+                try:
+                    send_mail(
+                        'Your ForensicEvidence Email OTP',
+                        f'Hello {user.username},\n\nYour OTP code is: {otp}\n\nPlease enter this code to verify your email address.',
+                        settings.DEFAULT_FROM_EMAIL,
+                        [user.email],
+                        fail_silently=False,
+                    )
+                    email_sent = True
+                except Exception as e:
+                    print(f"[OTP Email Error] {e}")
 
-                messages.success(request, f"Welcome {user.username}! An OTP has been sent to {user.email} to verify your email.")
+                if email_sent:
+                    messages.success(request, f"Welcome {user.username}! An OTP has been sent to {user.email}.")
+                else:
+                    messages.warning(request, f"Welcome {user.username}! Email delivery issue encountered. Your verification OTP code is: {otp}")
+
                 return redirect('verify_otp')
 
             except Exception as e:
@@ -149,8 +152,6 @@ def verify_otp_view(request):
             return redirect('base')
         else:
             return render(request, 'accounts/verify_otp.html', {'error': 'Invalid OTP. Please try again.'})
-
-    return render(request, 'accounts/verify_otp.html')
 
     return render(request, 'accounts/verify_otp.html')
 
@@ -237,12 +238,17 @@ def case_create(request):
     return render(request, 'evidence/case_form.html', {'form': form})
 
 
+from django.db.models import Q
+
 @login_required
 def evidence_list(request):
     if request.user.is_superuser:
-        evidences = Evidence.objects.all()
+        evidences = Evidence.objects.all().order_by('-uploaded_at')
     else:
-        evidences = Evidence.objects.filter(viewers=request.user)
+        # Show evidence uploaded by user OR where user is a viewer
+        evidences = Evidence.objects.filter(
+            Q(viewers=request.user) | Q(uploaded_by=request.user)
+        ).distinct().order_by('-uploaded_at')
     return render(request, 'evidence/evidence_list.html', {'evidences': evidences})
 
 
@@ -267,18 +273,30 @@ def evidence_create(request):
             evidence.save()
             form.save_m2m()
 
+            # Always add uploader as a viewer of their own evidence
+            evidence.viewers.add(request.user)
+
             viewers = form.cleaned_data.get('viewers')
             if viewers:
                 for viewer in viewers:
-                    send_mail(
-                        subject='New Evidence Uploaded',
-                        message=f"New evidence has been uploaded to case {evidence.case.case_number}.",
-                        from_email=settings.DEFAULT_FROM_EMAIL,
-                        recipient_list=[viewer.email],
-                        fail_silently=True,
-                    )
+                    if viewer.email and viewer != request.user:
+                        try:
+                            send_mail(
+                                subject='New Evidence Uploaded',
+                                message=f"New evidence has been uploaded to case {evidence.case.case_number}.",
+                                from_email=settings.DEFAULT_FROM_EMAIL,
+                                recipient_list=[viewer.email],
+                                fail_silently=True,
+                            )
+                        except Exception as e:
+                            print(f"[Evidence Mail Error] {e}")
+
             messages.success(request, "Evidence uploaded successfully!")
             return redirect('evidence_list')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field.capitalize()}: {error}")
     else:
         form = EvidenceForm(request=request)
     return render(request, 'evidence/evidence_form.html', {'form': form})
