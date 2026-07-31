@@ -69,10 +69,13 @@ def register_view(request):
             messages.info(request, f"An OTP code has been sent to {user.email}. Please enter it to verify.")
             return redirect('verify_otp')
         else:
-            print(f"[Registration Form Errors] {form.errors}")
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field.capitalize()}: {error}")
     else:
         form = CustomUserCreationForm()
     return render(request, 'accounts/register.html', {'form': form})
+
 
 
 
