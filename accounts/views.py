@@ -207,7 +207,7 @@ def contact(request):
 
 @login_required
 def contact_view(request):
-    contacts_list = Contact.objects.all()
+    contacts_list = Contact.objects.all().order_by('-id')
     paginator = Paginator(contacts_list, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
