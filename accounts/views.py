@@ -62,7 +62,7 @@ def debug_view(request):
 
     # Test Brevo email - raw API call to see exact error
     import os, requests as req
-    brevo_key = os.environ.get('BREVO_API_KEY')
+    brevo_key = os.environ.get('BREVO_API_KEY', '').strip()  # strip accidental newlines
     from_email = s.DEFAULT_FROM_EMAIL
     info['default_from_email'] = from_email
     if brevo_key:

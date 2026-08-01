@@ -8,7 +8,7 @@ def generate_otp():
     return str(random.randint(100000, 999999))
 
 def send_custom_email(subject, message, recipient_list):
-    brevo_key = os.environ.get('BREVO_API_KEY')
+    brevo_key = os.environ.get('BREVO_API_KEY', '').strip()  # strip accidental newlines
     if brevo_key:
         url = "https://api.brevo.com/v3/smtp/email"
         payload = {
