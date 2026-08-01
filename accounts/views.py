@@ -3,7 +3,6 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.core.mail import send_mail
 from django.conf import settings
 
 from .forms import *
@@ -99,14 +98,11 @@ def register_view(request):
                 # Send OTP email synchronously (not in daemon thread) so Gunicorn doesn't kill it
                 email_sent = False
                 try:
-                    send_mail(
+                    email_sent = send_custom_email(
                         'Your ForensicEvidence Email OTP',
                         f'Hello {user.username},\n\nYour OTP code is: {otp}\n\nPlease enter this code to verify your email address.',
-                        settings.DEFAULT_FROM_EMAIL,
-                        [user.email],
-                        fail_silently=False,
+                        [user.email]
                     )
-                    email_sent = True
                 except Exception as e:
                     print(f"[OTP Email Error] {e}")
 
@@ -314,12 +310,10 @@ def evidence_create(request):
                 for viewer in viewers:
                     if viewer.email and viewer != request.user:
                         try:
-                            send_mail(
+                            send_custom_email(
                                 subject='New Evidence Uploaded',
                                 message=f"New evidence has been uploaded to case {evidence.case.case_number}.",
-                                from_email=settings.DEFAULT_FROM_EMAIL,
-                                recipient_list=[viewer.email],
-                                fail_silently=True,
+                                recipient_list=[viewer.email]
                             )
                         except Exception as e:
                             print(f"[Evidence Mail Error] {e}")
