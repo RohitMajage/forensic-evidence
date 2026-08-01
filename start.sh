@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+echo "Creating media directories..."
+mkdir -p media/evidence media/faces media/voices media/matches
+
 echo "Running migrations..."
 python manage.py migrate --noinput
 

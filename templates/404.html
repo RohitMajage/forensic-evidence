@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container text-center py-5">
+    <div class="card shadow-sm border-0 mx-auto p-5" style="max-width: 550px; border-radius: 15px;">
+        <div class="text-warning mb-3">
+            <i class="bi bi-exclamation-triangle-fill display-1"></i>
+        </div>
+        <h2 class="fw-bold mb-2">404 - Resource Not Found</h2>
+        <p class="text-muted mb-4">
+            The page or file you are trying to access does not exist or has been removed.
+            If you clicked on an evidence media file uploaded prior to a server restart, please re-upload the evidence.
+        </p>
+        <div class="d-flex justify-content-center gap-2">
+            <a href="{% url 'base' %}" class="btn btn-primary btn-rounded px-4">
+                <i class="bi bi-house-door"></i> Return Home
+            </a>
+            <a href="{% url 'evidence_list' %}" class="btn btn-outline-secondary btn-rounded px-4">
+                <i class="bi bi-folder2-open"></i> Evidence List
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

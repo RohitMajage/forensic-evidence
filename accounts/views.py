@@ -33,6 +33,10 @@ def base(request):
     return render(request, 'base.html')
 
 
+def custom_404_view(request, exception=None):
+    return render(request, '404.html', status=404)
+
+
 def debug_view(request):
     """Temporary debug endpoint to check server health on Render."""
     import sys, django

@@ -3,6 +3,8 @@ from django.urls import path, include, re_path
 from django.conf import settings
 from django.views.static import serve
 
+handler404 = 'accounts.views.custom_404_view'
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('accounts.urls')),
