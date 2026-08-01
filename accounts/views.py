@@ -60,17 +60,30 @@ def debug_view(request):
         info['db_error'] = str(e)
         info['db_ok'] = False
 
-    # Test Brevo email
-    try:
-        from accounts.utils import send_custom_email
-        result = send_custom_email(
-            'ForensicEvidence Debug Test',
-            'This is a test email from the debug endpoint.',
-            [s.DEFAULT_FROM_EMAIL]
-        )
-        info['brevo_email_sent'] = result
-    except Exception as e:
-        info['brevo_email_error'] = str(e)
+    # Test Brevo email - raw API call to see exact error
+    import os, requests as req
+    brevo_key = os.environ.get('BREVO_API_KEY')
+    from_email = s.DEFAULT_FROM_EMAIL
+    info['default_from_email'] = from_email
+    if brevo_key:
+        payload = {
+            "sender": {"name": "ForensicEvidence", "email": from_email},
+            "to": [{"email": from_email}],
+            "subject": "ForensicEvidence Debug Test",
+            "textContent": "This is a test email from the debug endpoint."
+        }
+        headers_brevo = {
+            "accept": "application/json",
+            "api-key": brevo_key,
+            "content-type": "application/json"
+        }
+        try:
+            r = req.post("https://api.brevo.com/v3/smtp/email", json=payload, headers=headers_brevo, timeout=10)
+            info['brevo_status_code'] = r.status_code
+            info['brevo_response'] = r.text
+            info['brevo_email_sent'] = r.status_code == 201
+        except Exception as e:
+            info['brevo_email_error'] = str(e)
 
     # Test imports
     for mod in ['whitenoise', 'gunicorn', 'dj_database_url', 'resemblyzer', 'face_recognition']:
