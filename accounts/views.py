@@ -79,9 +79,9 @@ def register_view(request):
 
         # Remove any leftover unverified accounts with same username/email
         if username:
-            CustomUser.objects.filter(username=username, is_active=False).delete()
+            CustomUser.objects.filter(username=username, is_verified=False).delete()
         if email:
-            CustomUser.objects.filter(email=email, is_active=False).delete()
+            CustomUser.objects.filter(email=email, is_verified=False).delete()
 
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():

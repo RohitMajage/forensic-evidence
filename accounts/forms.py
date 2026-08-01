@@ -109,9 +109,9 @@ class EvidenceForm(forms.ModelForm):
         model = Evidence
         fields = ['case', 'file', 'type', 'description', 'viewers']
         widgets = {
-            'case': forms.Select(attrs={'class': 'form-control'}),
+            'case': forms.Select(attrs={'class': 'form-select'}),
             'file': forms.ClearableFileInput(attrs={'class': 'form-control'}),
-            'type': forms.Select(attrs={'class': 'form-control'}),
+            'type': forms.Select(attrs={'class': 'form-select'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
 

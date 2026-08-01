@@ -1,6 +1,9 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<!-- Include jQuery and Select2 media for django-select2 widgets -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+{{ form.media }}
 <div class="container mt-4 mb-5">
     <div class="row justify-content-center">
         <div class="col-md-8">
