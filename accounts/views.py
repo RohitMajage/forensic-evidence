@@ -38,7 +38,7 @@ def custom_404_view(request, exception=None):
 
 def debug_view(request):
     """Temporary debug endpoint to check server health on Render."""
-    import sys, django
+    import sys, django, os
     from django.conf import settings as s
     info = {
         'python': sys.version,
@@ -47,6 +47,8 @@ def debug_view(request):
         'db_engine': s.DATABASES['default'].get('ENGINE', '?'),
         'email_backend': s.EMAIL_BACKEND,
         'allowed_hosts': s.ALLOWED_HOSTS,
+        'brevo_key_set': bool(os.environ.get('BREVO_API_KEY')),
+        'brevo_key_prefix': os.environ.get('BREVO_API_KEY', '')[:12] + '...' if os.environ.get('BREVO_API_KEY') else 'NOT SET',
     }
     # Test DB connection
     try:
@@ -57,6 +59,18 @@ def debug_view(request):
     except Exception as e:
         info['db_error'] = str(e)
         info['db_ok'] = False
+
+    # Test Brevo email
+    try:
+        from accounts.utils import send_custom_email
+        result = send_custom_email(
+            'ForensicEvidence Debug Test',
+            'This is a test email from the debug endpoint.',
+            [s.DEFAULT_FROM_EMAIL]
+        )
+        info['brevo_email_sent'] = result
+    except Exception as e:
+        info['brevo_email_error'] = str(e)
 
     # Test imports
     for mod in ['whitenoise', 'gunicorn', 'dj_database_url', 'resemblyzer', 'face_recognition']:
