@@ -1,28 +1,149 @@
 {% extends 'base.html' %}
+
 {% block content %}
-<div class="container mt-4">
-    <h2>Evidence List</h2>
-    <table class="table table-bordered table-striped">
-        <thead class="table-dark">
-            <tr>
-                <th>Case</th>
-                <th>Type</th>
-                <th>Uploaded At</th>
-                <th>Uploaded By</th>
-                <th>File</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for evidence in evidences %}
-            <tr>
-                <td>{{ evidence.case.case_number }}</td>
-                <td>{{ evidence.get_type_display }}</td>
-                <td>{{ evidence.uploaded_at }}</td>
-                <td>{{ evidence.uploaded_by }}</td>
-                <td><a href="{{ evidence.file.url }}" class="btn btn-sm btn-primary" target="_blank">View</a></td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<div class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2><i class="bi bi-folder2-open text-primary"></i> Evidence Records</h2>
+        <div>
+            <a href="{% url 'case_create' %}" class="btn btn-outline-primary me-2">
+                <i class="bi bi-folder-plus"></i> + New Case
+            </a>
+            <a href="{% url 'evidence_create' %}" class="btn btn-primary">
+                <i class="bi bi-cloud-upload"></i> Upload Evidence
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Filter & Search Bar -->
+    <form method="get" class="row g-2 mb-4 bg-light p-3 rounded border shadow-sm">
+        <div class="col-md-6">
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input type="text" name="q" class="form-control" placeholder="Search by case number, case name or description..." value="{{ query }}">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <select name="type" class="form-select">
+                <option value="">-- All Evidence Types --</option>
+                <option value="image" {% if selected_type == 'image' %}selected{% endif %}>Image</option>
+                <option value="audio" {% if selected_type == 'audio' %}selected{% endif %}>Audio</option>
+                <option value="video" {% if selected_type == 'video' %}selected{% endif %}>Video</option>
+                <option value="document" {% if selected_type == 'document' %}selected{% endif %}>Document</option>
+                <option value="digital" {% if selected_type == 'digital' %}selected{% endif %}>Digital Evidence</option>
+            </select>
+        </div>
+        <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-secondary w-100">Filter</button>
+            {% if query or selected_type %}
+                <a href="{% url 'evidence_list' %}" class="btn btn-outline-secondary">Reset</a>
+            {% endif %}
+        </div>
+    </form>
+
+    <!-- Evidence Table -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Case</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                            <th>Preview / File</th>
+                            <th>Uploaded By</th>
+                            <th>Uploaded At</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for evidence in evidences %}
+                        <tr>
+                            <td class="fw-bold">#{{ evidence.id }}</td>
+                            <td>
+                                <div><strong>{{ evidence.case.case_number }}</strong></div>
+                                <small class="text-muted">{{ evidence.case.case_name }}</small>
+                            </td>
+                            <td>
+                                {% if evidence.type == 'image' %}
+                                    <span class="badge bg-success"><i class="bi bi-image"></i> Image</span>
+                                {% elif evidence.type == 'audio' %}
+                                    <span class="badge bg-info text-dark"><i class="bi bi-music-note-beamer"></i> Audio</span>
+                                {% elif evidence.type == 'video' %}
+                                    <span class="badge bg-warning text-dark"><i class="bi bi-camera-video"></i> Video</span>
+                                {% elif evidence.type == 'document' %}
+                                    <span class="badge bg-primary"><i class="bi bi-file-earmark-text"></i> Document</span>
+                                {% else %}
+                                    <span class="badge bg-secondary"><i class="bi bi-hdd"></i> Digital</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if evidence.description %}
+                                    {{ evidence.description|truncatewords:10 }}
+                                {% else %}
+                                    <span class="text-muted italic">No description</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if evidence.type == 'image' %}
+                                    <a href="{{ evidence.file.url }}" target="_blank">
+                                        <img src="{{ evidence.file.url }}" alt="Preview" class="img-thumbnail" style="max-height: 50px; max-width: 70px; object-fit: cover;">
+                                    </a>
+                                {% elif evidence.type == 'audio' %}
+                                    <audio controls style="max-width: 200px; height: 35px;">
+                                        <source src="{{ evidence.file.url }}">
+                                        Audio playback not supported.
+                                    </audio>
+                                {% elif evidence.type == 'video' %}
+                                    <video style="max-height: 50px; max-width: 80px;" controls>
+                                        <source src="{{ evidence.file.url }}">
+                                    </video>
+                                {% else %}
+                                    <small class="text-truncate d-inline-block" style="max-width: 150px;">
+                                        <i class="bi bi-file-earmark"></i> {{ evidence.file.name }}
+                                    </small>
+                                {% endif %}
+                            </td>
+                            <td>{{ evidence.uploaded_by.username }}</td>
+                            <td><small class="text-muted">{{ evidence.uploaded_at|date:"M d, Y H:i" }}</small></td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{{ evidence.file.url }}" target="_blank" class="btn btn-outline-primary" title="View / Open File">
+                                        <i class="bi bi-eye"></i> View
+                                    </a>
+                                    <a href="{{ evidence.file.url }}" download class="btn btn-outline-secondary" title="Download File">
+                                        <i class="bi bi-download"></i> Download
+                                    </a>
+                                    {% if user == evidence.uploaded_by or user.is_superuser %}
+                                        <a href="{% url 'evidence_delete' evidence.id %}" class="btn btn-outline-danger" title="Delete Evidence" onclick="return confirm('Are you sure you want to delete this evidence?');">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                No evidence records found. Click <strong>Upload Evidence</strong> to add one.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

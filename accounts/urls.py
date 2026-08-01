@@ -25,6 +25,7 @@ urlpatterns = [
     path('case_create/', case_create, name='case_create'),
     path('evidence_create/', evidence_create, name='evidence_create'),
     path('evidence_list/', evidence_list, name='evidence_list'),
+    path('evidence/<int:pk>/delete/', evidence_delete, name='evidence_delete'),
     path('verify/', match_input, name='verify_input'),
 
 

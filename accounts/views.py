@@ -242,14 +242,43 @@ from django.db.models import Q
 
 @login_required
 def evidence_list(request):
+    query = request.GET.get('q', '').strip()
+    evidence_type = request.GET.get('type', '').strip()
+
     if request.user.is_superuser:
-        evidences = Evidence.objects.all().order_by('-uploaded_at')
+        evidences = Evidence.objects.all()
     else:
-        # Show evidence uploaded by user OR where user is a viewer
         evidences = Evidence.objects.filter(
             Q(viewers=request.user) | Q(uploaded_by=request.user)
-        ).distinct().order_by('-uploaded_at')
-    return render(request, 'evidence/evidence_list.html', {'evidences': evidences})
+        ).distinct()
+
+    if query:
+        evidences = evidences.filter(
+            Q(case__case_number__icontains=query) |
+            Q(case__case_name__icontains=query) |
+            Q(description__icontains=query)
+        )
+    if evidence_type:
+        evidences = evidences.filter(type=evidence_type)
+
+    evidences = evidences.order_by('-uploaded_at')
+
+    return render(request, 'evidence/evidence_list.html', {
+        'evidences': evidences,
+        'query': query,
+        'selected_type': evidence_type,
+    })
+
+
+@login_required
+def evidence_delete(request, pk):
+    evidence = get_object_or_404(Evidence, pk=pk)
+    if request.user == evidence.uploaded_by or request.user.is_superuser:
+        evidence.delete()
+        messages.success(request, "Evidence deleted successfully.")
+    else:
+        messages.error(request, "You do not have permission to delete this evidence.")
+    return redirect('evidence_list')
 
 
 @login_required
